@@ -1,0 +1,94 @@
+<div class="page">
+  <a routerLink="/projects" class="back">&larr; Volver a proyectos</a>
+
+  @if (project(); as p) {
+    <h1>{{ p.name }}</h1>
+    <span class="badge" [class.archived]="p.status === 'ARCHIVED'">{{ p.status }}</span>
+    @if (p.description) {
+      <p class="description">{{ p.description }}</p>
+    }
+  }
+
+  <h2>Tareas</h2>
+
+  <form class="create-form" [formGroup]="form" (ngSubmit)="createTask()">
+    <div class="field">
+      <label class="sr-only" for="task-title">Titulo de la tarea</label>
+      <input
+        id="task-title"
+        type="text"
+        formControlName="title"
+        placeholder="Titulo"
+        [class.invalid]="form.controls.title.invalid && form.controls.title.touched"
+        [attr.aria-invalid]="form.controls.title.invalid && form.controls.title.touched"
+        [attr.aria-describedby]="form.controls.title.invalid && form.controls.title.touched ? 'task-title-error' : null"
+      />
+      @if (form.controls.title.invalid && form.controls.title.touched) {
+        <p class="field-error" id="task-title-error" role="alert">El titulo es obligatorio</p>
+      }
+    </div>
+    <div class="field">
+      <label class="sr-only" for="task-description">Descripcion de la tarea</label>
+      <input
+        id="task-description"
+        type="text"
+        formControlName="description"
+        placeholder="Descripcion (opcional)"
+      />
+    </div>
+    <div class="field">
+      <label class="sr-only" for="task-due-date">Fecha de vencimiento</label>
+      <input
+        id="task-due-date"
+        type="date"
+        formControlName="dueDate"
+        [class.invalid]="form.controls.dueDate.invalid && form.controls.dueDate.touched"
+        [attr.aria-invalid]="form.controls.dueDate.invalid && form.controls.dueDate.touched"
+        [attr.aria-describedby]="form.controls.dueDate.invalid && form.controls.dueDate.touched ? 'task-due-date-error' : null"
+      />
+      @if (form.controls.dueDate.invalid && form.controls.dueDate.touched) {
+        <p class="field-error" id="task-due-date-error" role="alert">La fecha de vencimiento es obligatoria</p>
+      }
+    </div>
+    <button type="submit" [disabled]="form.invalid || creating()">Crear tarea</button>
+  </form>
+
+  <div aria-live="polite">
+    @if (loading()) {
+      <p class="loading">Cargando tareas...</p>
+    } @else {
+      <ul class="task-list">
+        @for (task of tasks(); track task.id) {
+          <li class="task-card" [attr.data-status]="task.status">
+            <div class="task-info">
+              <strong>{{ task.title }}</strong>
+              <span class="status-badge" [attr.data-status]="task.status">{{ task.status }}</span>
+              <span class="due">Vence: {{ task.dueDate }}</span>
+              @if (task.description) {
+                <p>{{ task.description }}</p>
+              }
+            </div>
+            <div class="task-actions">
+              <label class="sr-only" [for]="'task-status-' + task.id">Estado de la tarea {{ task.title }}</label>
+              <select
+                [id]="'task-status-' + task.id"
+                [value]="task.status"
+                (change)="updateStatus(task, $any($event.target).value)"
+              >
+                @for (status of statuses; track status) {
+                  <option [value]="status">{{ status }}</option>
+                }
+              </select>
+              <button type="button" class="danger" (click)="remove(task)">
+                Eliminar
+                <span class="sr-only"> tarea {{ task.title }}</span>
+              </button>
+            </div>
+          </li>
+        } @empty {
+          <p class="empty">No hay tareas en este proyecto.</p>
+        }
+      </ul>
+    }
+  </div>
+</div>

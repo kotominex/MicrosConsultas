@@ -1,0 +1,46 @@
+<div class="auth-page">
+  <form class="auth-card" [formGroup]="form" (ngSubmit)="submit()">
+    <h1>Iniciar sesion</h1>
+
+    <label for="email">Email</label>
+    <input
+      id="email"
+      type="email"
+      formControlName="email"
+      placeholder="usuario@correo.com"
+      [class.invalid]="form.controls.email.invalid && form.controls.email.touched"
+      [attr.aria-invalid]="form.controls.email.invalid && form.controls.email.touched"
+      [attr.aria-describedby]="form.controls.email.invalid && form.controls.email.touched ? 'email-error' : null"
+    />
+    @if (form.controls.email.invalid && form.controls.email.touched) {
+      <p class="field-error" id="email-error" role="alert">
+        {{ form.controls.email.errors?.['required'] ? 'El email es obligatorio' : 'El email no es valido' }}
+      </p>
+    }
+
+    <label for="password">Contrasena</label>
+    <input
+      id="password"
+      type="password"
+      formControlName="password"
+      [class.invalid]="form.controls.password.invalid && form.controls.password.touched"
+      [attr.aria-invalid]="form.controls.password.invalid && form.controls.password.touched"
+      [attr.aria-describedby]="form.controls.password.invalid && form.controls.password.touched ? 'password-error' : null"
+    />
+    @if (form.controls.password.invalid && form.controls.password.touched) {
+      <p class="field-error" id="password-error" role="alert">La contrasena es obligatoria</p>
+    }
+
+    @if (errorMessage()) {
+      <p class="error" role="alert">{{ errorMessage() }}</p>
+    }
+
+    <button type="submit" [disabled]="form.invalid || loading()">
+      {{ loading() ? 'Ingresando...' : 'Ingresar' }}
+    </button>
+
+    <p class="switch">
+      No tienes cuenta? <a routerLink="/register">Registrate</a>
+    </p>
+  </form>
+</div>

@@ -1,0 +1,63 @@
+<div class="page">
+  <h1>Mis proyectos</h1>
+
+  <form class="create-form" [formGroup]="form" (ngSubmit)="create()">
+    <div class="field">
+      <label class="sr-only" for="project-name">Nombre del proyecto</label>
+      <input
+        id="project-name"
+        type="text"
+        formControlName="name"
+        placeholder="Nombre del proyecto"
+        [class.invalid]="form.controls.name.invalid && form.controls.name.touched"
+        [attr.aria-invalid]="form.controls.name.invalid && form.controls.name.touched"
+        [attr.aria-describedby]="form.controls.name.invalid && form.controls.name.touched ? 'project-name-error' : null"
+      />
+      @if (form.controls.name.invalid && form.controls.name.touched) {
+        <p class="field-error" id="project-name-error" role="alert">El nombre es obligatorio</p>
+      }
+    </div>
+    <div class="field">
+      <label class="sr-only" for="project-description">Descripcion del proyecto</label>
+      <input
+        id="project-description"
+        type="text"
+        formControlName="description"
+        placeholder="Descripcion (opcional)"
+      />
+    </div>
+    <button type="submit" [disabled]="form.invalid || creating()">Crear proyecto</button>
+  </form>
+
+  <div aria-live="polite">
+    @if (loading()) {
+      <p class="loading">Cargando proyectos...</p>
+    } @else {
+      <ul class="project-list">
+        @for (project of projects(); track project.id) {
+          <li class="project-card">
+            <div class="project-info">
+              <a [routerLink]="['/projects', project.id]">{{ project.name }}</a>
+              <span class="badge" [class.archived]="project.status === 'ARCHIVED'">{{ project.status }}</span>
+              @if (project.description) {
+                <p>{{ project.description }}</p>
+              }
+            </div>
+            <div class="project-actions">
+              <button type="button" (click)="toggleArchive(project)">
+                {{ project.status === 'ACTIVE' ? 'Archivar' : 'Reactivar' }}
+                <span class="sr-only"> proyecto {{ project.name }}</span>
+              </button>
+              <button type="button" class="danger" (click)="remove(project)">
+                Eliminar
+                <span class="sr-only"> proyecto {{ project.name }}</span>
+              </button>
+            </div>
+          </li>
+        } @empty {
+          <p class="empty">No tienes proyectos todavia.</p>
+        }
+      </ul>
+    }
+  </div>
+</div>

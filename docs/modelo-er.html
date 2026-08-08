@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>Modelo de Base de Datos — MicrosConsultas</title>
+<style>
+  @page { size: A4 landscape; margin: 14mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+    color: #1e293b;
+    margin: 0;
+    font-size: 13px;
+  }
+  h1 { font-size: 22px; margin: 0 0 4px; color: #0f172a; }
+  h2 {
+    font-size: 15px;
+    color: #ffffff;
+    background: #1e293b;
+    padding: 6px 12px;
+    margin: 0 0 12px;
+    border-radius: 4px;
+  }
+  .subtitle { color: #64748b; margin: 0 0 20px; font-size: 12.5px; }
+  .page { page-break-after: always; padding-top: 4px; }
+  .page:last-child { page-break-after: auto; }
+  p.lead { line-height: 1.5; max-width: 900px; }
+  .db-tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 999px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .db-auth { background: #dbeafe; color: #1e40af; }
+  .db-core { background: #dcfce7; color: #166534; }
+
+  /* --- Diagram --- */
+  .diagram {
+    position: relative;
+    width: 960px;
+    height: 580px;
+    margin: 10px auto 0;
+  }
+  .entity {
+    position: absolute;
+    border: 1.5px solid #1e293b;
+    border-radius: 6px;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    overflow: hidden;
+  }
+  .entity .head {
+    background: #1e293b;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 12.5px;
+    padding: 7px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .entity table { width: 100%; border-collapse: collapse; font-family: 'SFMono-Regular', Consolas, Menlo, monospace; font-size: 10.5px; }
+  .entity td { padding: 4px 8px; border-top: 1px solid #e2e8f0; white-space: nowrap; }
+  .entity tr:first-child td { border-top: none; }
+  .tag { display: inline-block; font-size: 8.5px; font-weight: 700; border-radius: 3px; padding: 1px 4px; width: 20px; text-align: center; }
+  .tag-pk { background: #fef3c7; color: #92400e; }
+  .tag-fk { background: #dbeafe; color: #1e40af; }
+  .tag-blank { visibility: hidden; }
+  .fname { font-weight: 600; }
+  .ftype { color: #475569; }
+  .fnull { color: #94a3b8; font-size: 9.5px; }
+
+  .conn-label {
+    position: absolute;
+    font-size: 10px;
+    background: #fff9db;
+    border: 1px solid #f5e18c;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #7c5e00;
+    max-width: 260px;
+    line-height: 1.3;
+  }
+
+  /* --- Detail tables --- */
+  table.detail { width: 100%; border-collapse: collapse; margin-bottom: 26px; font-size: 12px; }
+  table.detail th {
+    background: #1e293b; color: white; text-align: left; padding: 6px 10px; font-size: 11.5px;
+  }
+  table.detail td { padding: 6px 10px; border-bottom: 1px solid #e2e8f0; }
+  table.detail tr:nth-child(even) td { background: #f8fafc; }
+  .pill { display: inline-block; font-size: 9.5px; font-weight: 700; padding: 1px 6px; border-radius: 999px; }
+  .pill-pk { background: #fef3c7; color: #92400e; }
+  .pill-fk { background: #dbeafe; color: #1e40af; }
+  .mono { font-family: 'SFMono-Regular', Consolas, Menlo, monospace; }
+  .legend { display: flex; gap: 24px; margin: 10px 0 22px; font-size: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  footer { color: #94a3b8; font-size: 10.5px; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<!-- ============ PAGE 1: Overview + Diagram ============ -->
+<div class="page">
+  <h1>Modelo de Base de Datos</h1>
+  <p class="subtitle">MicrosConsultas — Sistema de Gestión de Proyectos y Tareas · Generado a partir de las migraciones Flyway</p>
+
+  <p class="lead">
+    El sistema usa <b>una instancia de PostgreSQL con dos bases de datos físicamente separadas</b>, una por cada microservicio de negocio
+    (patrón <i>database-per-service</i>): <b>auth_db</b> (propiedad de <code>auth-service</code>) y <b>core_db</b> (propiedad de <code>core-service</code>).
+    No existe llave foránea física entre ambas bases — <code>core_db.projects.owner_id</code> referencia lógicamente a <code>auth_db.users.id</code>
+    únicamente a través del claim <code>sub</code> del JWT emitido por <code>auth-service</code>.
+  </p>
+
+  <h2>Diagrama Entidad-Relación</h2>
+
+  <div class="diagram">
+    <!-- Connector: users.id -> projects.owner_id (logical, cross-database) -->
+    <svg width="960" height="580" style="position:absolute; top:0; left:0;">
+      <defs>
+        <marker id="arrowSolid" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6 Z" fill="#1e293b" />
+        </marker>
+        <marker id="arrowDashed" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6 Z" fill="#92400e" />
+        </marker>
+      </defs>
+
+      <!-- FK real: projects.id -> tasks.project_id -->
+      <path d="M 750,256 L 750,300" stroke="#1e293b" stroke-width="1.6" fill="none" marker-end="url(#arrowSolid)" />
+
+      <!-- Logical reference: users.id -> projects.owner_id -->
+      <path d="M 380,122 L 480,122 L 480,148 L 575,148" stroke="#92400e" stroke-width="1.4" fill="none"
+            stroke-dasharray="5,4" marker-end="url(#arrowDashed)" />
+    </svg>
+
+    <div class="conn-label" style="left:760px; top:270px;">
+      <b>FK real</b><br/>tasks.project_id → projects.id<br/>ON DELETE CASCADE
+    </div>
+
+    <div class="conn-label" style="left:398px; top:96px;">
+      <b>Referencia lógica (no FK física)</b><br/>projects.owner_id ≈ users.id<br/>vía claim <code>sub</code> del JWT
+    </div>
+
+    <!-- Entity: users -->
+    <div class="entity" style="left:40px; top:40px; width:340px; height:164px;">
+      <div class="head"><span>users</span><span class="db-tag db-auth">auth_db</span></div>
+      <table>
+        <tr><td><span class="tag tag-pk">PK</span></td><td class="fname">id</td><td class="ftype">BIGSERIAL</td><td class="fnull">NOT NULL</td></tr>
+        <tr><td><span class="tag tag-blank">·</span></td><td class="fname">email</td><td class="ftype">VARCHAR(255)</td><td class="fnull">NOT NULL, UNIQUE</td></tr>
+        <tr><td><span class="tag tag-blank">·</span></td><td class="fname">password_hash</td><td class="ftype">VARCHAR(255)</td><td class="fnull">NOT NULL</td></tr>
+        <tr><td><span class="tag tag-blank">·</span></td><td class="fname">role</td><td class="ftype">VARCHAR(20)</td><td class="fnull">NOT NULL</td></tr>
+        <tr><td><span class="tag tag-blank">·</span></td><td class="fname">created_at</td><td class="ftype">TIMESTAMPTZ</td><td class="fnull">NOT NULL, now()</td></tr>
+      </table>
+    </div>
+
+    <!-- Entity: projects -->
+    <div class="entity" style="left:580px; top:40px; width:340px; height:216px;">
+      <div class="head"><span>projects</span><span class="db-tag db-core">core_db</span></div>
+      <table>
+        <tr><td><span class="tag tag-pk">PK</span></td><td class="fname">id</td><td class="ftype">BIGSERIAL</td><td class="fnull">NOT NULL</td></tr>
+        <tr><td><span class="tag tag-blank">·</span></td><td class="fname">name</td><td class="ftype">VARCHAR(255)</td><td class="fnull">NOT NULL</td></tr>
+        <tr><td><span class="tag tag-blank">·</span></td><td class="fname">description</td><td class="ftype">TEXT</td><td class="fnull">NULL</td></tr>
+        <tr><td><span class="tag tag-blank">·</span></td><td class="fname">status</td><td class="ftype">VARCHAR(20)</td><td class="fnull">NOT NULL</td></tr>
+        <tr><td><span class="tag tag-blank">·</span></td><td class="fname">owner_id</td><td class="ftype">BIGINT</td><td class="fnull">NOT NULL*</td></tr>
+        <tr><td><span class="tag tag-blank">·</span></td><td class="fname">created_at</td><td class="ftype">TIMESTAMPTZ</td><td class="fnull">NOT NULL, now()</td></tr>
+        <tr><td><span class="tag tag-blank">·</span></td><td class="fname">updated_at</td><td class="ftype">TIMESTAMPTZ</td><td class="fnull">NOT NULL, now()</td></tr>
+      </table>
+    </div>
+
+    <!-- Entity: tasks -->
+    <div class="entity" style="left:580px; top:300px; width:340px; height:242px;">
+      <div class="head"><span>tasks</span><span class="db-tag db-core">core_db</span></div>
+      <table>
+        <tr><td><span class="tag tag-pk">PK</span></td><td class="fname">id</td><td class="ftype">BIGSERIAL</td><td class="fnull">NOT NULL</td></tr>
+        <tr><td><span class="tag tag-fk">FK</span></td><td class="fname">project_id</td><td class="ftype">BIGINT</td><td class="fnull">NOT NULL</td></tr>
+        <tr><td><span class="tag tag-blank">·</span></td><td class="fname">title</td><td class="ftype">VARCHAR(255)</td><td class="fnull">NOT NULL</td></tr>
+        <tr><td><span class="tag tag-blank">·</span></td><td class="fname">description</td><td class="ftype">TEXT</td><td class="fnull">NULL</td></tr>
+        <tr><td><span class="tag tag-blank">·</span></td><td class="fname">status</td><td class="ftype">VARCHAR(20)</td><td class="fnull">NOT NULL</td></tr>
+        <tr><td><span class="tag tag-blank">·</span></td><td class="fname">due_date</td><td class="ftype">DATE</td><td class="fnull">NOT NULL</td></tr>
+        <tr><td><span class="tag tag-blank">·</span></td><td class="fname">created_at</td><td class="ftype">TIMESTAMPTZ</td><td class="fnull">NOT NULL, now()</td></tr>
+        <tr><td><span class="tag tag-blank">·</span></td><td class="fname">updated_at</td><td class="ftype">TIMESTAMPTZ</td><td class="fnull">NOT NULL, now()</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="legend" style="margin-top:8px;">
+    <div class="legend-item"><span class="tag tag-pk">PK</span> Llave primaria</div>
+    <div class="legend-item"><span class="tag tag-fk">FK</span> Llave foránea (física, con constraint)</div>
+    <div class="legend-item">* <code>owner_id</code>: sin constraint FK física — referencia de aplicación al <code>id</code> de <code>auth_db.users</code></div>
+  </div>
+</div>
+
+<!-- ============ PAGE 2: users detail ============ -->
+<div class="page">
+  <h2>Tabla: users <span class="db-tag db-auth">auth_db · propiedad de auth-service</span></h2>
+  <table class="detail">
+    <thead>
+      <tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Default</th><th>Clave</th><th>Notas</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="mono">id</td><td class="mono">BIGSERIAL</td><td>NOT NULL</td><td>autoincremental</td><td><span class="pill pill-pk">PK</span></td><td>Identificador del usuario</td></tr>
+      <tr><td class="mono">email</td><td class="mono">VARCHAR(255)</td><td>NOT NULL</td><td>—</td><td>UNIQUE</td><td>Usado como login; indexado (<code>idx_users_email</code>)</td></tr>
+      <tr><td class="mono">password_hash</td><td class="mono">VARCHAR(255)</td><td>NOT NULL</td><td>—</td><td>—</td><td>Hash BCrypt; nunca se almacena texto plano</td></tr>
+      <tr><td class="mono">role</td><td class="mono">VARCHAR(20)</td><td>NOT NULL</td><td>—</td><td>—</td><td>Valores de aplicación: <code>ADMIN</code>, <code>USER</code></td></tr>
+      <tr><td class="mono">created_at</td><td class="mono">TIMESTAMPTZ</td><td>NOT NULL</td><td><code>now()</code></td><td>—</td><td>Fecha de registro</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Índices — users</h2>
+  <table class="detail">
+    <thead><tr><th>Nombre</th><th>Columnas</th><th>Tipo</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">users_pkey</td><td class="mono">id</td><td>Primary key (btree)</td></tr>
+      <tr><td class="mono">idx_users_email</td><td class="mono">email</td><td>btree</td></tr>
+    </tbody>
+  </table>
+
+  <p class="lead">Fuente: <code>auth-service/src/main/resources/db/migration/V1__create_users.sql</code></p>
+</div>
+
+<!-- ============ PAGE 3: projects detail ============ -->
+<div class="page">
+  <h2>Tabla: projects <span class="db-tag db-core">core_db · propiedad de core-service</span></h2>
+  <table class="detail">
+    <thead>
+      <tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Default</th><th>Clave</th><th>Notas</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="mono">id</td><td class="mono">BIGSERIAL</td><td>NOT NULL</td><td>autoincremental</td><td><span class="pill pill-pk">PK</span></td><td>Identificador del proyecto</td></tr>
+      <tr><td class="mono">name</td><td class="mono">VARCHAR(255)</td><td>NOT NULL</td><td>—</td><td>—</td><td>Nombre del proyecto</td></tr>
+      <tr><td class="mono">description</td><td class="mono">TEXT</td><td>NULL</td><td>—</td><td>—</td><td>Descripción opcional</td></tr>
+      <tr><td class="mono">status</td><td class="mono">VARCHAR(20)</td><td>NOT NULL</td><td>—</td><td>—</td><td>Valores de aplicación: <code>ACTIVE</code>, <code>ARCHIVED</code></td></tr>
+      <tr><td class="mono">owner_id</td><td class="mono">BIGINT</td><td>NOT NULL</td><td>—</td><td>—</td><td>Referencia lógica a <code>auth_db.users.id</code> (claim <code>sub</code> del JWT); sin FK física entre bases; indexado (<code>idx_projects_owner_id</code>)</td></tr>
+      <tr><td class="mono">created_at</td><td class="mono">TIMESTAMPTZ</td><td>NOT NULL</td><td><code>now()</code></td><td>—</td><td>Fecha de creación</td></tr>
+      <tr><td class="mono">updated_at</td><td class="mono">TIMESTAMPTZ</td><td>NOT NULL</td><td><code>now()</code></td><td>—</td><td>Última actualización</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Índices — projects</h2>
+  <table class="detail">
+    <thead><tr><th>Nombre</th><th>Columnas</th><th>Tipo</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">projects_pkey</td><td class="mono">id</td><td>Primary key (btree)</td></tr>
+      <tr><td class="mono">idx_projects_owner_id</td><td class="mono">owner_id</td><td>btree</td></tr>
+    </tbody>
+  </table>
+
+  <p class="lead">Fuente: <code>core-service/src/main/resources/db/migration/V1__create_projects_and_tasks.sql</code></p>
+</div>
+
+<!-- ============ PAGE 4: tasks detail ============ -->
+<div class="page">
+  <h2>Tabla: tasks <span class="db-tag db-core">core_db · propiedad de core-service</span></h2>
+  <table class="detail">
+    <thead>
+      <tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Default</th><th>Clave</th><th>Notas</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="mono">id</td><td class="mono">BIGSERIAL</td><td>NOT NULL</td><td>autoincremental</td><td><span class="pill pill-pk">PK</span></td><td>Identificador de la tarea</td></tr>
+      <tr><td class="mono">project_id</td><td class="mono">BIGINT</td><td>NOT NULL</td><td>—</td><td><span class="pill pill-fk">FK</span></td><td>REFERENCES projects(id) ON DELETE CASCADE; indexado (<code>idx_tasks_project_id</code>)</td></tr>
+      <tr><td class="mono">title</td><td class="mono">VARCHAR(255)</td><td>NOT NULL</td><td>—</td><td>—</td><td>Título de la tarea</td></tr>
+      <tr><td class="mono">description</td><td class="mono">TEXT</td><td>NULL</td><td>—</td><td>—</td><td>Descripción opcional</td></tr>
+      <tr><td class="mono">status</td><td class="mono">VARCHAR(20)</td><td>NOT NULL</td><td>—</td><td>—</td><td>Valores de aplicación: <code>PENDING</code>, <code>IN_PROGRESS</code>, <code>DONE</code>, <code>OVERDUE</code></td></tr>
+      <tr><td class="mono">due_date</td><td class="mono">DATE</td><td>NOT NULL</td><td>—</td><td>—</td><td>Fecha de vencimiento; no puede ser anterior a <code>created_at</code> (regla de aplicación)</td></tr>
+      <tr><td class="mono">created_at</td><td class="mono">TIMESTAMPTZ</td><td>NOT NULL</td><td><code>now()</code></td><td>—</td><td>Fecha de creación</td></tr>
+      <tr><td class="mono">updated_at</td><td class="mono">TIMESTAMPTZ</td><td>NOT NULL</td><td><code>now()</code></td><td>—</td><td>Última actualización</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Índices — tasks</h2>
+  <table class="detail">
+    <thead><tr><th>Nombre</th><th>Columnas</th><th>Tipo</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">tasks_pkey</td><td class="mono">id</td><td>Primary key (btree)</td></tr>
+      <tr><td class="mono">idx_tasks_project_id</td><td class="mono">project_id</td><td>btree</td></tr>
+      <tr><td class="mono">idx_tasks_status_due_date</td><td class="mono">status, due_date</td><td>btree compuesto — usado por el scheduler de tareas <code>OVERDUE</code></td></tr>
+    </tbody>
+  </table>
+
+  <p class="lead">Fuente: <code>core-service/src/main/resources/db/migration/V1__create_projects_and_tasks.sql</code></p>
+
+  <footer>MicrosConsultas — Documentación técnica generada a partir del código fuente (migraciones Flyway) del repositorio.</footer>
+</div>
+
+</body>
+</html>
