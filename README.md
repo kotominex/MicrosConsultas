@@ -27,23 +27,23 @@ El frontend solo se comunica con `api-gateway`; ningún servicio de negocio es a
 
 ## Puesta en marcha
 
-1. Copiar el archivo de variables de entorno de ejemplo:
+```bash
+docker compose up --build
+```
 
-   ```bash
-   cp .env.example .env
-   ```
+Con eso ya queda arriba todo el stack, sin ningún paso manual previo: construye las 4 imágenes, crea `auth_db`/`core_db` en el primer arranque de Postgres (`postgres/init/01-init-databases.sh`), cada microservicio aplica sus propias migraciones Flyway al iniciar, y todas las variables de entorno (incluida `JWT_SECRET`) tienen un valor por defecto en `docker-compose.yml`. El stack queda funcional (con las tablas **vacías**) con solo clonar el repo y ejecutar ese comando.
 
-   Revisar especialmente `JWT_SECRET` (usar un valor propio, no el de ejemplo, si esto se va a exponer más allá de un entorno local).
+Abrir el frontend en [http://localhost:4200](http://localhost:4200).
 
-2. Levantar todo el stack:
+### (Opcional) Personalizar variables de entorno
 
-   ```bash
-   docker compose up --build
-   ```
+Para usar tus propios valores (por ejemplo, un `JWT_SECRET` propio si esto se va a exponer más allá de un entorno local/evaluación, u otros puertos), copiá el archivo de ejemplo antes de levantar el stack:
 
-3. Abrir el frontend en [http://localhost:4200](http://localhost:4200).
+```bash
+cp .env.example .env
+```
 
-Este comando por sí solo ya cubre **todo** el despliegue: construye las 4 imágenes, crea `auth_db`/`core_db` en el primer arranque de Postgres (`postgres/init/01-init-databases.sh`) y cada microservicio aplica sus propias migraciones Flyway al iniciar. No hace falta ningún paso manual adicional (migraciones, builds sueltos, etc.) — el stack queda funcional, aunque con las tablas **vacías**.
+`docker-compose.yml` lo lee automáticamente si existe; si no existe, usa los valores por defecto documentados en `.env.example`.
 
 Para detener y limpiar:
 
