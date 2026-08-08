@@ -1,0 +1,24 @@
+<header class="navbar">
+  <a routerLink="/projects" class="brand">Gestion de Proyectos</a>
+
+  @if (currentUser(); as user) {
+    <div class="user-info">
+      <span>{{ user.email }}</span>
+      <span class="role">{{ user.role }}</span>
+      <button
+        type="button"
+        class="theme-toggle"
+        (click)="toggleTheme()"
+        [attr.aria-pressed]="theme() === 'dark'"
+        aria-label="Cambiar tema claro/oscuro"
+      >
+        {{ theme() === 'dark' ? 'Modo claro' : 'Modo oscuro' }}
+      </button>
+      <button type="button" class="logout" (click)="logout()">Salir</button>
+    </div>
+  }
+</header>
+
+<main>
+  <router-outlet></router-outlet>
+</main>

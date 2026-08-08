@@ -1,0 +1,135 @@
+.page {
+  max-width: 720px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.loading,
+.empty {
+  color: var(--color-text-muted);
+}
+
+.create-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.field {
+  flex: 1;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+}
+
+.field input {
+  padding: 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+}
+
+.field input.invalid {
+  border-color: var(--color-danger);
+}
+
+.field-error {
+  margin: 0.25rem 0 0;
+  color: var(--color-danger);
+  font-size: 0.8rem;
+}
+
+.create-form button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  background: var(--color-primary);
+  color: white;
+  cursor: pointer;
+  height: 2.25rem;
+}
+
+.create-form button:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+}
+
+.create-form button:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+.project-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.project-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.project-info a {
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--color-text);
+}
+
+.project-info p {
+  margin: 0.25rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.badge {
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+  font-size: 0.75rem;
+}
+
+.badge.archived {
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
+}
+
+.project-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.project-actions button {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.project-actions button.danger {
+  color: var(--color-danger);
+  border-color: var(--color-danger-border);
+}
+
+@media (max-width: 560px) {
+  .project-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .project-actions {
+    justify-content: flex-end;
+  }
+}
