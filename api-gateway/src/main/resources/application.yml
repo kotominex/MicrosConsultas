@@ -1,0 +1,45 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: auth-service
+          uri: http://${AUTH_SERVICE_HOST:auth-service}:${AUTH_SERVICE_PORT:8081}
+          predicates:
+            - Path=/api/auth/**
+        - id: core-service-projects
+          uri: http://${CORE_SERVICE_HOST:core-service}:${CORE_SERVICE_PORT:8082}
+          predicates:
+            - Path=/api/projects/**
+        - id: core-service-tasks
+          uri: http://${CORE_SERVICE_HOST:core-service}:${CORE_SERVICE_PORT:8082}
+          predicates:
+            - Path=/api/tasks/**
+      globalcors:
+        cors-configurations:
+          "[/**]":
+            allowedOriginPatterns: "${CORS_ALLOWED_ORIGINS:http://localhost:4200}"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+logging:
+  level:
+    com.codesa.gateway: INFO
+    org.springframework.cloud.gateway: INFO
